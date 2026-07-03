@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from helpers.platform import Platform
 from helpers.runner import Runner
 
 
@@ -41,7 +42,12 @@ def assert_core_tools(r: Runner) -> None:
     r.assert_command("starship")
 
 
-def assert_rtk_extensions(r: Runner, home: Path) -> None:
+def assert_rtk_extensions(r: Runner, home: Path, platform: Platform) -> None:
     r.section("rtk extensions")
+    # The rtk postinstall in common.toml uses a bash shebang; on Windows the
+    # hook can't run, so we only enforce the installed files on unix.
+    if platform.is_windows:
+        r.skip("rtk postinstall is bash-only; skipped on Windows")
+        return
     r.assert_file(home / ".config/opencode/plugins/rtk.ts")
     r.assert_file(home / ".pi/agent/extensions/rtk.ts")
