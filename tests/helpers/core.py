@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from helpers.platform import Platform
 from helpers.runner import Runner
 
 
@@ -27,6 +28,10 @@ def assert_core_dotfiles(r: Runner, home: Path) -> None:
     r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "opencode")
     r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "starship")
     r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "eza")
+    r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "pi")
+    r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "rtk-ai/rtk")
+    r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "rtk init -g --opencode")
+    r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "rtk init -g --agent pi")
 
 
 def assert_core_tools(r: Runner) -> None:
@@ -35,3 +40,14 @@ def assert_core_tools(r: Runner) -> None:
     r.assert_command("git")
     r.assert_command("mise")
     r.assert_command("starship")
+
+
+def assert_rtk_extensions(r: Runner, home: Path, platform: Platform) -> None:
+    r.section("rtk extensions")
+    # The rtk postinstall in common.toml uses a bash shebang; on Windows the
+    # hook can't run, so we only enforce the installed files on unix.
+    if platform.is_windows:
+        r.skip("rtk postinstall is bash-only; skipped on Windows")
+        return
+    r.assert_file(home / ".config/opencode/plugins/rtk.ts")
+    r.assert_file(home / ".pi/agent/extensions/rtk.ts")

@@ -5,6 +5,7 @@ experimental = true
 starship = "latest"
 uv = "latest"
 "eza" = "latest"
+fzf = "latest"
 pi = "latest"
 
 [tools.opencode]
@@ -12,4 +13,9 @@ version = "latest"
 
 [tools."github:rtk-ai/rtk"]
 version = "latest"
-post_install = "rtk --init -g --opencode"
+postinstall = '''
+#!/bin/bash
+set -e
+rtk init -g --opencode
+rtk init -g --agent pi
+'''

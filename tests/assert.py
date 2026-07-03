@@ -40,6 +40,7 @@ from helpers.core import (  # noqa: E402
     assert_chezmoi_config,
     assert_core_dotfiles,
     assert_core_tools,
+    assert_rtk_extensions,
 )
 from helpers.platform import Platform, detect_platform  # noqa: E402
 from helpers.runner import Runner  # noqa: E402
@@ -60,18 +61,19 @@ from helpers.windows import (  # noqa: E402
 
 # ── Test suites (orchestrators) ────────────────────────────────────────────
 
-def run_common(r: Runner, home: Path) -> None:
+def run_common(r: Runner, home: Path, platform: Platform) -> None:
     """Assertions that apply on every platform."""
     assert_chezmoi_config(r, home)
     assert_core_dotfiles(r, home)
     assert_core_tools(r)
+    assert_rtk_extensions(r, home, platform)
     assert_pi_extensions(r, home)
     assert_pi_cli(r)
 
 
 def run_unix(r: Runner, home: Path, platform: Platform) -> None:
     """Linux / WSL / macOS assertions (shared unix stack)."""
-    run_common(r, home)
+    run_common(r, home, platform)
 
     r.section(f"{platform.value.title()} dotfiles")
     if platform.is_wsl:
@@ -88,7 +90,7 @@ def run_unix(r: Runner, home: Path, platform: Platform) -> None:
 
 def run_windows(r: Runner, home: Path) -> None:
     """Windows assertions."""
-    run_common(r, home)
+    run_common(r, home, Platform.WINDOWS)
     assert_windows_dotfiles(r, home)
     assert_windows_terminal(r, home)
     assert_windows_tools(r)
