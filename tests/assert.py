@@ -40,6 +40,7 @@ from helpers.core import (  # noqa: E402
     assert_chezmoi_config,
     assert_core_dotfiles,
     assert_core_tools,
+    assert_rtk_extensions,
 )
 from helpers.platform import Platform, detect_platform  # noqa: E402
 from helpers.runner import Runner  # noqa: E402
@@ -65,6 +66,7 @@ def run_common(r: Runner, home: Path) -> None:
     assert_chezmoi_config(r, home)
     assert_core_dotfiles(r, home)
     assert_core_tools(r)
+    assert_rtk_extensions(r, home)
     assert_pi_extensions(r, home)
     assert_pi_cli(r)
 
