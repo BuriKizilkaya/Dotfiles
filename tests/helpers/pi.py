@@ -146,19 +146,35 @@ def assert_pi_cli(r: Runner) -> None:
 
 def _sandbox_auth_json(key: str) -> tuple[dict[str, str], str]:
     """Create a temp HOME containing a fake auth.json with the ollama-cloud
-    key. Returns ``(env, sandbox_dir)``. The caller owns the directory."""
+    key. Returns ``(env, sandbox_dir)``. The caller owns the directory.
+
+    The env inherits PATH (and everything else) from the parent process so
+    that the pi binary/shim remains reachable; only the home-related vars
+    are redirected to the sandbox. Mise data/config dirs are pinned to the
+    parent's locations so the pi shim can still resolve to its binary.
+    """
     sandbox = tempfile.mkdtemp(prefix="pi-auth-test-")
+    parent_home = Path(os.environ.get("HOME") or os.environ.get("USERPROFILE") or str(Path.home()))
     if sys.platform == "win32":
         agent_dir = Path(sandbox) / "pi" / "agent"
-        env = {"USERPROFILE": sandbox, "HOME": sandbox}
+        env_override = {
+            "USERPROFILE": sandbox,
+            "HOME": sandbox,
+        }
     else:
         agent_dir = Path(sandbox) / ".pi" / "agent"
-        env = {"HOME": sandbox}
+        env_override = {"HOME": sandbox}
     agent_dir.mkdir(parents=True, exist_ok=True)
     (agent_dir / "auth.json").write_text(
         json.dumps({"ollama-cloud": {"type": "api_key", "key": key}}),
         encoding="utf8",
     )
+    env = dict(os.environ)
+    env.update(env_override)
+    # Keep mise pointed at the parent's state — the pi shim is a mise wrapper
+    # and refuses to run when it can't resolve HOME → ~/.local/share/mise.
+    env.setdefault("MISE_DATA_DIR", str(parent_home / ".local" / "share" / "mise"))
+    env.setdefault("MISE_CONFIG_DIR", str(parent_home / ".config" / "mise"))
     return env, sandbox
 
 
