@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 type OpenAIModelsResponse = {
@@ -14,20 +17,12 @@ type OllamaShowResponse = {
   model_info?: Record<string, number>;
 };
 
-type RegisteredModel = {
-  id: string;
-  name: string;
-  reasoning: boolean;
-  input: Array<"text" | "image">;
-  cost: { input: number; output: number; cacheRead: number; cacheWrite: number };
-  contextWindow: number;
-  maxTokens: number;
-  compat?: {
-    supportsDeveloperRole?: boolean;
-    maxTokensField?: "max_completion_tokens" | "max_tokens";
-  };
-};
+type AuthEntry =
+  | { type: "api_key"; key: string; env?: Record<string, string> }
+  | { type: "oauth"; access: string; refresh?: string; expires?: number }
+  | Record<string, unknown>;
 
+const PROVIDER_ID = "ollama-cloud";
 const DEFAULT_BASE_URL = "https://ollama.com/v1";
 const DEFAULT_CONTEXT_WINDOW = 131072;
 const DEFAULT_MAX_TOKENS = 8192;
@@ -51,6 +46,48 @@ const fetchJson = async <T>(url: string, init: RequestInit = {}): Promise<T> => 
   } finally {
     clearTimeout(timer);
   }
+};
+
+const resolveEnvValue = (raw: string): string | undefined => {
+  if (!raw.startsWith("$")) return raw;
+  const name = raw.startsWith("${") && raw.endsWith("}")
+    ? raw.slice(2, -1)
+    : raw.slice(1);
+  return process.env[name];
+};
+
+// Resolve the API key the same way pi's runtime auth chain does: env var
+// first, then auth.json (where /login stores it). The extension needs the
+// key during startup to fetch the live model list, before pi has wired up
+// its own resolution. If we find a key in auth.json, also export it as
+// OLLAMA_CLOUD_API_KEY so the literal "$OLLAMA_CLOUD_API_KEY" reference
+// passed to registerProvider resolves to a real value at request time.
+const resolveApiKey = async (): Promise<string | undefined> => {
+  const fromEnv = process.env.OLLAMA_CLOUD_API_KEY?.trim();
+  if (fromEnv) return fromEnv;
+
+  const authPath = join(homedir(), ".pi", "agent", "auth.json");
+  try {
+    const raw = await readFile(authPath, "utf8");
+    const parsed = JSON.parse(raw) as Record<string, AuthEntry>;
+    const entry = parsed[PROVIDER_ID];
+    if (!entry) return undefined;
+    let resolved: string | undefined;
+    if ((entry as { type?: string }).type === "api_key") {
+      const key = (entry as { key?: string }).key;
+      if (!key) return undefined;
+      resolved = resolveEnvValue(key);
+    } else if ((entry as { type?: string }).type === "oauth") {
+      resolved = (entry as { access?: string }).access;
+    }
+    if (resolved) {
+      process.env.OLLAMA_CLOUD_API_KEY = resolved;
+    }
+    return resolved;
+  } catch {
+    return undefined;
+  }
+  return undefined;
 };
 
 const parseFallbackModels = (): RegisteredModel[] => {
@@ -110,9 +147,23 @@ const mapWithConcurrency = async <T, R>(
   return results;
 };
 
+type RegisteredModel = {
+  id: string;
+  name: string;
+  reasoning: boolean;
+  input: Array<"text" | "image">;
+  cost: { input: number; output: number; cacheRead: number; cacheWrite: number };
+  contextWindow: number;
+  maxTokens: number;
+  compat?: {
+    supportsDeveloperRole?: boolean;
+    maxTokensField?: "max_completion_tokens" | "max_tokens";
+  };
+};
+
 export default async function (pi: ExtensionAPI) {
   const baseUrl = normalizeBaseUrl(process.env.OLLAMA_CLOUD_BASE_URL ?? DEFAULT_BASE_URL);
-  const apiKey = process.env.OLLAMA_CLOUD_API_KEY;
+  const apiKey = await resolveApiKey();
   const nativeBase = nativeBaseFrom(baseUrl);
 
   let models: RegisteredModel[] = [];
@@ -158,7 +209,11 @@ export default async function (pi: ExtensionAPI) {
     }
   }
 
-  pi.registerProvider("ollama-cloud", {
+  // Pass the apiKey as a "$ENV_VAR" reference so pi resolves it at request
+  // time using its normal auth chain. resolveApiKey() above has already
+  // mirrored the auth.json entry into process.env.OLLAMA_CLOUD_API_KEY,
+  // so /login (which writes to auth.json) makes models selectable.
+  pi.registerProvider(PROVIDER_ID, {
     name: "Ollama Cloud",
     baseUrl,
     apiKey: "$OLLAMA_CLOUD_API_KEY",
