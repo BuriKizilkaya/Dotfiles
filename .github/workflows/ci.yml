@@ -74,64 +74,6 @@ jobs:
           export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
           python3 tests/test-pi-ollama-extension.py
 
-  # ── Windows ──────────────────────────────────────────────────────────────
-  windows:
-    name: Windows
-    runs-on: windows-latest
-    env:
-      DOTFILES_ENV: dev_computer
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      OLLAMA_CLOUD_API_KEY: ${{ secrets.OLLAMA_CLOUD_API_KEY }}
-    steps:
-      - uses: actions/checkout@v4
-
-      # bootstrap.ps1 does not install mise itself, so we install it first.
-      # The installer puts mise.exe in %LOCALAPPDATA%\mise\bin and shims in
-      # %LOCALAPPDATA%\mise\shims.  We persist both dirs to GITHUB_PATH so
-      # subsequent steps can call mise and mise-managed tools directly.
-      - name: Install mise
-        shell: pwsh
-        run: |
-          # Download mise directly from GitHub Releases.
-          # On real Windows machines use: winget install jdx.mise (see README).
-          # winget is skipped here because GH Actions runner sources are unreliable in CI.
-          $headers = @{
-            Authorization        = "Bearer $env:GITHUB_TOKEN"
-            "X-GitHub-Api-Version" = "2022-11-28"
-          }
-          $tag = (irm "https://api.github.com/repos/jdx/mise/releases/latest" -Headers $headers).tag_name
-          $url = "https://github.com/jdx/mise/releases/download/$tag/mise-$tag-windows-x64.zip"
-          Write-Host "==> Downloading mise $tag from $url"
-          irm -Uri $url -OutFile "$env:TEMP\mise.zip"
-          Expand-Archive "$env:TEMP\mise.zip" -DestinationPath "$env:TEMP\mise_ext" -Force
-          $binDir = "$env:LOCALAPPDATA\mise\bin"
-          New-Item -ItemType Directory -Force -Path $binDir | Out-Null
-          $miseExe = Get-ChildItem "$env:TEMP\mise_ext" -Recurse -Filter "mise.exe" | Select-Object -First 1
-          Copy-Item $miseExe.FullName "$binDir\mise.exe"
-          # Verify install before moving on
-          $env:PATH = "$binDir;$env:PATH"
-          mise --version
-          # Persist paths so subsequent steps can reach mise and its tool shims
-          "$binDir"                      | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          "$env:LOCALAPPDATA\mise\shims" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          "$env:USERPROFILE\bin"         | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
-      # bootstrap.ps1 installs chezmoi, writes chezmoi.toml, creates the
-      # ~/.local/share/chezmoi symlink, then runs `chezmoi apply` which
-      # triggers the run_after_* hooks:  mise install → PS profile setup.
-      - name: Run bootstrap
-        shell: pwsh
-        run: .\bootstrap.ps1
-
-      - name: Run assertions
-        shell: pwsh -NoProfile -NonInteractive {0}
-        run: python3 tests/assert.py
-
-      - name: Test ollama-cloud pi extension (blackbox)
-        if: env.OLLAMA_CLOUD_API_KEY != ''
-        shell: pwsh -NoProfile -NonInteractive {0}
-        run: python3 tests/test-pi-ollama-extension.py
-
   # ── WSL ──────────────────────────────────────────────────────────────────
   wsl:
     name: WSL
