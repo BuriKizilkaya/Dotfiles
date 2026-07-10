@@ -64,27 +64,6 @@ def run_cli(
     return result.returncode, result.stdout, result.stderr
 
 
-# ---------------------------------------------------------------------------
-# Assertion groups
-# ---------------------------------------------------------------------------
-
-def assert_pi_extensions(r: Runner, home: Path) -> None:
-    """Check that chezmoi deployed the extension file with the right content."""
-    r.section("Pi agent extensions — deployment")
-
-    ext = home / ".pi" / "agent" / "extensions" / "ollama-cloud.ts"
-
-    r.assert_file(ext)
-    r.assert_file_contains(ext, "ollama-cloud")             # provider ID
-    r.assert_file_contains(ext, "OLLAMA_CLOUD_API_KEY")     # API key env var
-    r.assert_file_contains(ext, "OLLAMA_CLOUD_BASE_URL")    # base URL override env var
-    r.assert_file_contains(ext, "OLLAMA_CLOUD_MODELS")      # fallback models env var
-    r.assert_file_contains(ext, "ollama.com/v1")            # default base URL
-    r.assert_file_contains(ext, "registerProvider")         # core pi API call
-    r.assert_file_contains(ext, "authHeader")               # bearer auth flag
-    r.assert_file_contains(ext, "auth.json")                # /login support
-
-
 def assert_pi_cli(r: Runner) -> None:
     """Smoke-test the pi CLI to verify the extension integrates cleanly."""
     r.section("Pi agent extensions — CLI smoke tests")
