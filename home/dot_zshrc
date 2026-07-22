@@ -29,6 +29,10 @@ source "$ZSH_PLUGINS/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 # Starship
 if command -v starship &> /dev/null; then
   eval "$(starship init zsh)"
+
+# zoxide
+if command -v zoxide &> /dev/null; then
+  eval "$(zoxide init zsh)"
 fi
 
 # Start Docker daemon automatically when logging in if not running.
@@ -49,4 +53,3 @@ done
 if [ -S "$HOME/.1password/agent.sock" ]; then
   export SSH_AUTH_SOCK="$HOME/.1password/agent.sock"
 fi
-
