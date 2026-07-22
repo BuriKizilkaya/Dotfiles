@@ -7,6 +7,7 @@ uv = "latest"
 "eza" = "latest"
 fzf = "latest"
 pi = "latest"
+zoxide = "latest"
 
 [tools.opencode]
 version = "latest"

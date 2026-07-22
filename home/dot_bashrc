@@ -19,6 +19,11 @@ if command -v starship &> /dev/null; then
   eval "$(starship init bash)"
 fi
 
+# zoxide
+if command -v zoxide &> /dev/null; then
+  eval "$(zoxide init bash)"
+fi
+
 # Start Docker daemon automatically when logging in if not running.
 DOCKERRUNNING=`ps aux | grep dockerd | grep -v grep`
 DOCKER_CMD_EXISTS=`command -v docker`

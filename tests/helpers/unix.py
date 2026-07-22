@@ -13,6 +13,15 @@ def assert_zshrc(r: Runner, home: Path) -> None:
     r.assert_file(home / ".zshrc")
     r.assert_file_contains(home / ".zshrc", "starship init zsh")
     r.assert_file_contains(home / ".zshrc", "mise activate")
+    r.assert_file_contains(home / ".zshrc", "zoxide init zsh")
+
+
+def assert_bashrc(r: Runner, home: Path) -> None:
+    r.section("bash")
+    r.assert_file(home / ".bashrc")
+    r.assert_file_contains(home / ".bashrc", "starship init bash")
+    r.assert_file_contains(home / ".bashrc", "mise activate")
+    r.assert_file_contains(home / ".bashrc", "zoxide init bash")
 
 
 def assert_profile_dev(r: Runner, home: Path) -> None:

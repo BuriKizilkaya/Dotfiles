@@ -46,6 +46,7 @@ from helpers.platform import Platform, detect_platform  # noqa: E402
 from helpers.runner import Runner  # noqa: E402
 from helpers.ssh import assert_ssh_config  # noqa: E402
 from helpers.unix import (  # noqa: E402
+    assert_bashrc,
     assert_profile_dev,
     assert_terminator,
     assert_wsl_gitconfig,
@@ -79,6 +80,7 @@ def run_unix(r: Runner, home: Path, platform: Platform) -> None:
         assert_wsl_gitconfig(r, home)
 
     assert_zshrc(r, home)
+    assert_bashrc(r, home)
     assert_profile_dev(r, home)
     assert_terminator(r, home)
     assert_ssh_config(r, home, platform)
