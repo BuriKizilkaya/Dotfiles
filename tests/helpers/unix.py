@@ -14,6 +14,7 @@ def assert_zshrc(r: Runner, home: Path) -> None:
     r.assert_file_contains(home / ".zshrc", "starship init zsh")
     r.assert_file_contains(home / ".zshrc", "mise activate")
     r.assert_file_contains(home / ".zshrc", "zoxide init zsh")
+    r.assert_command_succeeds(["zsh", "-lc", 'source "$HOME/.zshrc"'], "Source ~/.zshrc")
 
 
 def assert_bashrc(r: Runner, home: Path) -> None:

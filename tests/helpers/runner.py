@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -56,6 +57,15 @@ class Runner:
             self._pass(f"Command available: {cmd}")
         else:
             self._fail(f"Command not found: {cmd}")
+
+    def assert_command_succeeds(self, cmd: list[str], msg: str) -> None:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        if result.returncode == 0:
+            self._pass(msg)
+        else:
+            details = (result.stderr or result.stdout).strip()
+            suffix = f": {details}" if details else ""
+            self._fail(f"{msg}{suffix}")
 
     def assert_symlink(self, path: "str | Path") -> None:
         p = Path(path)
