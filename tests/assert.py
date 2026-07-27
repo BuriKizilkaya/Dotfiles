@@ -48,6 +48,7 @@ from helpers.ssh import assert_ssh_config  # noqa: E402
 from helpers.unix import (  # noqa: E402
     assert_bashrc,
     assert_profile_dev,
+    assert_profile_template_rendering,
     assert_terminator,
     assert_wsl_gitconfig,
     assert_zshrc,
@@ -81,7 +82,8 @@ def run_unix(r: Runner, home: Path, platform: Platform) -> None:
 
     assert_zshrc(r, home)
     assert_bashrc(r, home)
-    assert_profile_dev(r, home)
+    assert_profile_dev(r, home, platform)
+    assert_profile_template_rendering(r)
     assert_terminator(r, home)
     assert_ssh_config(r, home, platform)
 
