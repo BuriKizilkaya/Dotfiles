@@ -92,6 +92,18 @@ class Runner:
         else:
             self._fail(f"File {p} unexpectedly contains {pattern!r}")
 
+    def assert_text_contains(self, content: str, pattern: str, msg: str) -> None:
+        if pattern in content:
+            self._pass(msg)
+        else:
+            self._fail(f"{msg}: missing {pattern!r}")
+
+    def assert_text_not_contains(self, content: str, pattern: str, msg: str) -> None:
+        if pattern not in content:
+            self._pass(msg)
+        else:
+            self._fail(f"{msg}: unexpectedly contains {pattern!r}")
+
     # -- summary --
 
     def summary(self) -> int:
