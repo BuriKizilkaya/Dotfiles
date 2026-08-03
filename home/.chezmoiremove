@@ -1,5 +1,5 @@
 .DS_Store
 
-# Prepend with a `/` to specify a specific path relative to $HOME.
+# Paths are relative to $HOME.
 
-/.zshrc.pre-oh-my-zsh*
+.zshrc.pre-oh-my-zsh*
