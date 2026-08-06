@@ -1,7 +1,7 @@
 param(
     [string]$Branch = (git rev-parse --abbrev-ref HEAD),
     [ValidateSet("dev_computer", "home_lab", "devcontainer")]
-    [string]$DotfilesEnv = "devcontainer"
+    [string]$DotfilesEnv = "dev_computer"
 )
 
 $ErrorActionPreference = "Stop"
@@ -48,7 +48,7 @@ try {
     Invoke-Wsl @("-d", $WSL_DISTRO, "bash", "-c", "cd /root && git clone --branch $Branch $DOTFILES_REPO && cd dotfiles && DOTFILES_ENV=$DotfilesEnv bash bootstrap.sh")
 
     Write-Host "==> Running assertions in WSL" -ForegroundColor Cyan
-    Invoke-Wsl @("-d", $WSL_DISTRO, "bash", "-c", "cd /root/dotfiles && python3 tests/assert.py --platform wsl")
+    Invoke-Wsl @("-d", $WSL_DISTRO, "bash", "-c", "cd /root/dotfiles && DOTFILES_ENV=$DotfilesEnv python3 tests/assert.py --platform wsl")
 
     Write-Host "==> WSL tests completed successfully." -ForegroundColor Green
 }

@@ -12,6 +12,13 @@ Readme.md
 .config/ghostty
 {{ end }}
 
+# On WSL, SSH is routed through the Windows host (ssh.exe alias / gitconfig
+# sshCommand), and there is no native Linux 1Password agent socket to point
+# to, so skip the Linux .ssh/config entirely.
+{{ if (and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | contains "WSL")) }}
+.ssh/config
+{{ end }}
+
 # Ignore files, which not needed on windows
 {{ if eq .chezmoi.os "windows" }}
 .bashrc

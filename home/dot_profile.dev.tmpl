@@ -90,7 +90,7 @@ else
   alias la='ls -a --color=auto'
 fi
 
-{{- if (and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | contains "WSL")) }}
+{{- if (and (eq .chezmoi.os "linux") (ne .env "devcontainer") (.chezmoi.kernel.osrelease | contains "WSL")) }}
 # SSH aliases
 alias ssh='ssh.exe'
 alias ssh-add='ssh-add.exe'
