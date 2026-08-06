@@ -50,6 +50,16 @@ def assert_profile_dev(r: Runner, home: Path, platform: Platform) -> None:
         r.assert_file_contains(profile_dev, "SSH_AUTH_SOCK")
         r.assert_file_contains(profile_dev, "$HOME/.1password/agent.sock")
 
+    # ssh/ssh-add aliases to ssh.exe/ssh-add.exe: only on a real WSL host
+    # (i.e. not when the "WSL" kernel is merely inherited by a devcontainer
+    # running inside WSL2).
+    if platform.is_wsl and dotfiles_env != "devcontainer":
+        r.assert_file_contains(profile_dev, "alias ssh='ssh.exe'")
+        r.assert_file_contains(profile_dev, "alias ssh-add='ssh-add.exe'")
+    else:
+        r.assert_file_not_contains(profile_dev, "alias ssh='ssh.exe'")
+        r.assert_file_not_contains(profile_dev, "alias ssh-add='ssh-add.exe'")
+
 
 def assert_profile_template_rendering(r: Runner) -> None:
     r.section("Profile template rendering")
@@ -125,6 +135,31 @@ def assert_profile_template_rendering(r: Runner) -> None:
         wsl_profile,
         "2BUA8C4S2C.com.1password",
         "WSL profile skips macOS 1Password socket",
+    )
+    r.assert_text_contains(
+        wsl_profile,
+        "alias ssh='ssh.exe'",
+        "WSL host profile aliases ssh to ssh.exe",
+    )
+    r.assert_text_contains(
+        wsl_profile,
+        "alias ssh-add='ssh-add.exe'",
+        "WSL host profile aliases ssh-add to ssh-add.exe",
+    )
+
+    # A devcontainer running inside WSL2 still reports a "WSL" kernel
+    # osrelease, but must use native Linux ssh, not the Windows host's
+    # ssh.exe (which isn't reachable from inside the container).
+    wsl_devcontainer_profile = render_profile("linux", "devcontainer", "microsoft-standard-WSL2")
+    r.assert_text_not_contains(
+        wsl_devcontainer_profile,
+        "alias ssh='ssh.exe'",
+        "WSL devcontainer profile does not alias ssh to ssh.exe",
+    )
+    r.assert_text_not_contains(
+        wsl_devcontainer_profile,
+        "alias ssh-add='ssh-add.exe'",
+        "WSL devcontainer profile does not alias ssh-add to ssh-add.exe",
     )
 
 
