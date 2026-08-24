@@ -10,14 +10,18 @@ fi
 echo "==> Environment: $DOTFILES_ENV"
 
 echo "==> Installing mise..."
-if command -v mise &>/dev/null || [[ -x "$HOME/.local/bin/mise" ]]; then
+if command -v mise &>/dev/null; then
+    MISE_BIN="$(command -v mise)"
+elif [[ -x "$HOME/.local/bin/mise" ]]; then
+    MISE_BIN="$HOME/.local/bin/mise"
     echo "  mise already installed, skipping."
 else
     curl https://mise.run | sh
+    MISE_BIN="$HOME/.local/bin/mise"
 fi
 
-echo "==> Installing chezmoi..."
-sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+echo "==> Installing chezmoi with mise..."
+"$MISE_BIN" use -g chezmoi@latest
 
 echo "==> Applying dotfiles..."
 mkdir -p "$HOME/.config/chezmoi"
@@ -30,7 +34,7 @@ mkdir -p "$HOME/.local/share"
 ln -sfn "$DOTFILES_DIR" "$HOME/.local/share/chezmoi"
 
 # chezmoi apply runs all dotfiles + the run_once_/run_onchange_ hooks
-$HOME/.local/bin/chezmoi apply
+"$MISE_BIN" exec chezmoi@latest -- chezmoi apply
 
 echo ""
 echo "Done! You may need to restart your shell."

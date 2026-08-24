@@ -24,6 +24,9 @@ def assert_core_dotfiles(r: Runner, home: Path) -> None:
     r.assert_file(home / ".config/starship.toml")
     r.assert_file_contains(home / ".config/starship.toml", "add_newline")
 
+    r.assert_file(home / ".config/mise/config.toml")
+    r.assert_file_contains(home / ".config/mise/config.toml", "chezmoi")
+
     r.assert_file(home / ".config/mise/conf.d/common.toml")
     r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "opencode")
     r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "starship")

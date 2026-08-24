@@ -60,7 +60,7 @@ DOTFILES_ENV=dev_computer bash bootstrap.sh
 
 > `DOTFILES_ENV` options: `dev_computer` (default) · `home_lab` · `devcontainer`
 
-`bootstrap.sh` installs mise, installs chezmoi, writes the chezmoi config, symlinks the repo, and runs `chezmoi apply`. The `run_after` hooks then install mise tools and configure zsh with plugins.
+`bootstrap.sh` installs mise, installs chezmoi through mise, writes the chezmoi config, symlinks the repo, and runs `chezmoi apply`. The `run_after` hooks then install mise tools and configure zsh with plugins.
 
 ---
 
@@ -94,7 +94,7 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 .\bootstrap.ps1
 ```
 
-`bootstrap.ps1` installs mise via `winget`, installs chezmoi, writes the chezmoi config, symlinks the repo, and runs `chezmoi apply`. The `run_after` hooks then install mise tools and set up the PowerShell profile.
+`bootstrap.ps1` installs mise via `winget`, installs chezmoi through mise, writes the chezmoi config, symlinks the repo, and runs `chezmoi apply`. The `run_after` hooks then install mise tools and set up the PowerShell profile.
 
 > Windows always uses `DOTFILES_ENV=dev_computer`.
 
