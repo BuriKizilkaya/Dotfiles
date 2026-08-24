@@ -21,13 +21,8 @@ if (Get-Command mise -ErrorAction SilentlyContinue) {
     $env:PATH = "$env:LOCALAPPDATA\mise\shims;$env:PATH"
 }
 
-Write-Host "==> Installing chezmoi..." -ForegroundColor Cyan
-if (-not (Get-Command chezmoi -ErrorAction SilentlyContinue)) {
-    iex "&{$(irm 'https://get.chezmoi.io/ps1')} -b '~/bin'"
-    $env:PATH = "$env:USERPROFILE\bin;$env:PATH"
-} else {
-    Write-Host "  chezmoi already installed, skipping." -ForegroundColor Green
-}
+Write-Host "==> Installing chezmoi with mise..." -ForegroundColor Cyan
+mise use -g chezmoi@latest
 
 Write-Host "==> Applying dotfiles..." -ForegroundColor Cyan
 
@@ -51,7 +46,7 @@ if (Test-Path $ChezmoiLink) {
 New-Item -ItemType SymbolicLink -Path $ChezmoiLink -Target $DotfilesDir | Out-Null
 
 # chezmoi apply runs all dotfiles + the run_once_/run_onchange_ hooks
-chezmoi apply
+mise exec chezmoi@latest -- chezmoi apply
 
 Write-Host ""
 Write-Host "Done! Restart your terminal to apply changes." -ForegroundColor Green

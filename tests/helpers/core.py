@@ -24,10 +24,15 @@ def assert_core_dotfiles(r: Runner, home: Path) -> None:
     r.assert_file(home / ".config/starship.toml")
     r.assert_file_contains(home / ".config/starship.toml", "add_newline")
 
+    r.assert_file(home / ".config/mise/config.toml")
+    r.assert_file_contains(home / ".config/mise/config.toml", "chezmoi")
+
     r.assert_file(home / ".config/mise/conf.d/common.toml")
     r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "opencode")
     r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "starship")
     r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "eza")
+    r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "ripgrep")
+    r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "fd")
     r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "pi")
     r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "rtk-ai/rtk")
     r.assert_file_contains(home / ".config/mise/conf.d/common.toml", "rtk init -g --opencode")
@@ -40,6 +45,8 @@ def assert_core_tools(r: Runner) -> None:
     r.assert_command("git")
     r.assert_command("mise")
     r.assert_command("starship")
+    r.assert_command("rg")
+    r.assert_command("fd")
 
 
 def assert_rtk_extensions(r: Runner, home: Path, platform: Platform) -> None:
