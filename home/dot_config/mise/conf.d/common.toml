@@ -6,6 +6,8 @@ starship = "latest"
 uv = "latest"
 "eza" = "latest"
 fzf = "latest"
+ripgrep = "latest"
+fd = "latest"
 pi = "latest"
 zoxide = "latest"
 
