@@ -4,16 +4,19 @@ description: |
   Use when asked to fix, resolve, or triage SonarCloud issues on a PR or branch.
   Covers installing sonarqube-cli, fetching issues from SonarCloud, grouping them
   by file and severity, applying code fixes, and verifying the fixes rebuild
-  cleanly. Trigger keywords: sonar, sonarcloud, sonar issues, sonar findings,
-  code smell, sonar bug, sonar vulnerability, fix sonar, sonar PR, static
-  analysis issues.
+  cleanly. Also covers coverage and duplicated-lines measures (fetched via the
+  SonarQube measures API). Trigger keywords: sonar, sonarcloud, sonar issues,
+  sonar findings, code smell, sonar bug, sonar vulnerability, fix sonar, sonar PR,
+  static analysis issues, coverage, duplicated lines, duplication.
 ---
 
 # Fix SonarCloud Issues
 
 This skill uses the official [SonarQube CLI](https://github.com/SonarSource/sonarqube-cli)
 to fetch and fix issues raised by SonarCloud against the current PR branch.
-Follow the steps in order and do not skip any.
+Follow the steps in order and do not skip any. **Step 3 (coverage & duplication)
+is optional** — only run it when the user explicitly asks to fix coverage or
+duplicated lines (e.g. "fix duplicated lines", "improve coverage").
 
 ---
 
@@ -86,7 +89,50 @@ scan has completed for that branch.
 
 ---
 
-## Step 3 — Analyze local changes (optional, SonarQube Cloud only)
+## Step 3 — Fetch coverage & duplication measures *(optional — only when the user explicitly asks)*
+
+> **Gate:** Skip this step unless the user's prompt explicitly mentions coverage
+> or duplicated lines (e.g. "fix duplicated lines", "raise coverage"). For a
+> normal "fix sonar issues" request, go straight to Step 4.
+
+Coverage and duplicated lines are *measures*, not issues, so they are **not**
+returned by `sonar list issues`. Fetch them via the SonarQube measures API using
+the CLI's generic `sonar api get` command. Replace `<projectKey>` with the key
+from `sonar-project.properties` (e.g. `konplan_<app>`).
+
+Project-level summary for the current branch:
+
+```bash
+sonar api get "/api/measures/component?component=<projectKey>&metricKeys=coverage,lines_to_cover,uncovered_lines,duplicated_lines_density,duplicated_lines,duplicated_blocks&branch=$(git rev-parse --abbrev-ref HEAD)"
+```
+
+Per-file breakdown (find files with low coverage or high duplication):
+
+```bash
+sonar api get "/api/measures/component_tree?component=<projectKey>&metricKeys=coverage,duplicated_lines_density,duplicated_lines,duplicated_blocks&branch=$(git rev-parse --abbrev-ref HEAD)&qualifiers=FIL&ps=500"
+```
+
+Pipe the JSON through `jq` to filter, e.g. files with
+`duplicated_lines_density > 0` or `coverage < 80`.
+
+Interpretation:
+
+| Measure | Meaning | Action |
+|---|---|---|
+| `coverage` | % of lines covered by tests | Add/improve unit tests for uncovered lines |
+| `lines_to_cover` / `uncovered_lines` | Lines that need tests / not covered | Target tests at the uncovered lines |
+| `duplicated_lines_density` | % of lines duplicated | Extract shared code into a common function/module |
+| `duplicated_lines` / `duplicated_blocks` | Absolute count of duplicated lines/blocks | Refactor the duplicated blocks |
+
+Rules:
+- Only address duplication/coverage in code you authored or touched in this PR.
+- Do not add tests purely to game the coverage metric; cover real behaviour.
+- If a duplicated block is a known false-positive (e.g. generated code), note it
+  in the PR rather than suppressing it.
+
+---
+
+## Step 4 — Analyze local changes (optional, SonarQube Cloud only)
 
 For fast pre-fix feedback on uncommitted edits:
 
@@ -100,7 +146,7 @@ checking that a proposed fix does not introduce a new violation.
 
 ---
 
-## Step 4 — Triage and prioritise
+## Step 5 — Triage and prioritise
 
 For each issue group, categorise by effort:
 
@@ -118,7 +164,7 @@ Rules:
 
 ---
 
-## Step 5 — Apply the fixes
+## Step 6 — Apply the fixes
 
 For each issue:
 
@@ -148,7 +194,7 @@ For each issue:
 
 ---
 
-## Step 6 — Rebuild and run tests
+## Step 7 — Rebuild and run tests
 
 ```bash
 mise run build-nrf        # must succeed
@@ -160,7 +206,7 @@ Fix any compilation errors before continuing.
 
 ---
 
-## Step 7 — Confirm issue reduction
+## Step 8 — Confirm issue reduction
 
 Re-query to verify the count dropped (full re-analysis happens on the next CI
 push; local `sonar analyze` gives immediate feedback on your changes):
@@ -174,7 +220,7 @@ sonar list issues \
 
 ---
 
-## Step 8 — Update release-notes.yml (if applicable)
+## Step 9 — Update release-notes.yml (if applicable)
 
 If the fixes address a user-visible bug or security vulnerability, update
 `release-notes.yml` under the appropriate version entry:
@@ -191,9 +237,12 @@ fixes:
 - [ ] `sonarqube-cli` installed (`sonar --version` works).
 - [ ] `SONARQUBE_CLI_TOKEN` and `SONARQUBE_CLI_ORG` are set; `sonar auth status` shows `[✓ Connected]`.
 - [ ] `sonar list issues` ran without error for the target branch.
+- [ ] *(Only if user asked for coverage/duplication)* Measures fetched via `sonar api get` for the target branch.
 - [ ] All BLOCKER and CRITICAL issues fixed (or explicitly justified with `// NOSONAR: <rule> — <reason>`).
 - [ ] All MAJOR BUGs and VULNERABILITYs in PR-authored code fixed.
 - [ ] No bare `// NOSONAR` without a justification and ticket reference.
+- [ ] *(Only if user asked for coverage/duplication)* Duplicated blocks in PR-authored code refactored (or justified as false-positive).
+- [ ] *(Only if user asked for coverage/duplication)* Uncovered lines in PR-authored code covered by meaningful tests.
 - [ ] `mise run check-format` exits 0.
 - [ ] `mise run build-nrf` exits 0.
 - [ ] `mise run unittests` exits 0.
