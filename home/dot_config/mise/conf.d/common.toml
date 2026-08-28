@@ -14,11 +14,9 @@ zoxide = "latest"
 [tools.opencode]
 version = "latest"
 
-[tools."github:rtk-ai/rtk"]
+[tools.rtk]
 version = "latest"
 postinstall = '''
-#!/bin/bash
-set -e
 rtk init -g --opencode
 rtk init -g --agent pi
 '''
